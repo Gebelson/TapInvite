@@ -5,8 +5,8 @@
 
 import React, { useState, useEffect, useRef, Component, ErrorInfo, ReactNode } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { MapPin, Clock, CheckCircle2, Send, Users, PartyPopper, Share2, ChevronRight, Flame } from 'lucide-react';
-import { collection, addDoc, onSnapshot, query, orderBy, serverTimestamp } from 'firebase/firestore';
+import { MapPin, Clock, CheckCircle2, Send, Users, PartyPopper, Share2, ChevronRight, Flame, Trash2 } from 'lucide-react';
+import { collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, deleteDoc, doc } from 'firebase/firestore';
 import { db } from './firebase';
 
 // Error Boundary Component
@@ -77,8 +77,12 @@ function App() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState('');
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const formRef = useRef<HTMLDivElement>(null);
+
+  // Detecta se está na rota /dev
+  const isDevMode = window.location.pathname === '/dev' || window.location.pathname === '/dev/';
 
   useEffect(() => {
     const q = query(collection(db, 'guests_v2'), orderBy('createdAt', 'desc'));
@@ -141,6 +145,18 @@ function App() {
     }
   };
 
+  const handleDelete = async (guestId: string) => {
+    if (!isDevMode) return;
+    setDeletingId(guestId);
+    try {
+      await deleteDoc(doc(db, 'guests_v2', guestId));
+    } catch (err: any) {
+      console.error("Error deleting document: ", err);
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   const scrollToForm = () => {
     formRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -164,7 +180,14 @@ function App() {
         <div className="ember ember-3"></div>
       </div>
 
-      <main className="relative z-10 max-w-3xl mx-auto px-4 py-12 md:py-24 flex flex-col gap-16">
+      {/* Dev Mode Banner */}
+      {isDevMode && (
+        <div className="fixed top-0 left-0 right-0 z-50 bg-red-600/90 backdrop-blur-sm text-white text-center py-2 text-sm font-medium tracking-wide border-b border-red-500">
+          🛠️ Modo Desenvolvedor — Deleção de confirmações habilitada
+        </div>
+      )}
+
+      <main className={`relative z-10 max-w-3xl mx-auto px-4 py-12 md:py-24 flex flex-col gap-16 ${isDevMode ? 'pt-20 md:pt-32' : ''}`}>
         
         {/* Hero Section */}
         <motion.section 
@@ -414,17 +437,29 @@ function App() {
                     <span className="font-medium text-white/90 text-lg">{guest.name}</span>
                   </div>
                   
-                  {guest.attending && guest.bringing && guest.bringing.length > 0 && (
-                    <div className="text-sm font-light text-white/60 sm:text-right bg-black/20 px-3 py-1.5 rounded-lg border border-white/5">
-                      <span className="text-white/30 mr-2 text-xs uppercase tracking-widest">Trazendo</span>
-                      {guest.bringing.join(', ')}
-                    </div>
-                  )}
-                  {!guest.attending && (
-                    <div className="text-sm font-light text-white/40 sm:text-right">
-                      Não vai poder ir
-                    </div>
-                  )}
+                  <div className="flex items-center gap-3 sm:ml-auto">
+                    {guest.attending && guest.bringing && guest.bringing.length > 0 && (
+                      <div className="text-sm font-light text-white/60 sm:text-right bg-black/20 px-3 py-1.5 rounded-lg border border-white/5">
+                        <span className="text-white/30 mr-2 text-xs uppercase tracking-widest">Trazendo</span>
+                        {guest.bringing.join(', ')}
+                      </div>
+                    )}
+                    {!guest.attending && (
+                      <div className="text-sm font-light text-white/40 sm:text-right">
+                        Não vai poder ir
+                      </div>
+                    )}
+                    {isDevMode && (
+                      <button
+                        onClick={() => handleDelete(guest.id)}
+                        disabled={deletingId === guest.id}
+                        title="Apagar confirmação"
+                        className="ml-2 p-2 rounded-lg text-white/30 hover:text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-500/20 transition-all disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
