@@ -4,8 +4,38 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>TapInvite</title>
+    <style>
+      #global-error {
+        display: none;
+        background: #220000;
+        color: #ffaaaa;
+        padding: 20px;
+        font-family: monospace;
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        z-index: 9999;
+        white-space: pre-wrap;
+      }
+    </style>
+    <script>
+      window.addEventListener('error', function(event) {
+        var errorDiv = document.getElementById('global-error');
+        if (errorDiv) {
+          errorDiv.style.display = 'block';
+          errorDiv.innerHTML += 'Error: ' + event.message + '\nAt: ' + event.filename + ':' + event.lineno + '\n\n';
+        }
+      });
+      window.addEventListener('unhandledrejection', function(event) {
+        var errorDiv = document.getElementById('global-error');
+        if (errorDiv) {
+          errorDiv.style.display = 'block';
+          errorDiv.innerHTML += 'Unhandled Promise Rejection: ' + (event.reason && event.reason.message ? event.reason.message : event.reason) + '\n\n';
+        }
+      });
+    </script>
   </head>
   <body>
+    <div id="global-error"></div>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
