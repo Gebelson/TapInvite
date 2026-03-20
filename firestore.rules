@@ -40,8 +40,9 @@ service cloud.firestore {
         request.resource.data.createdAt is timestamp &&
         isValidBringingList();
 
-      // No updates or deletes allowed for simplicity and security
-      allow update, delete: if false;
+      // No updates allowed; deletes are allowed (for /dev admin mode)
+      allow update: if false;
+      allow delete: if true;
     }
   }
 }
