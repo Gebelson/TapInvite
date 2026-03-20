@@ -3,11 +3,46 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, Component, ErrorInfo, ReactNode } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { MapPin, Clock, CheckCircle2, Send, Users, PartyPopper, Share2, ChevronRight, Flame } from 'lucide-react';
 import { collection, addDoc, onSnapshot, query, orderBy, serverTimestamp } from 'firebase/firestore';
 import { db } from './firebase';
+
+// Error Boundary Component
+class ErrorBoundary extends Component<{children: ReactNode}, {hasError: boolean, error: Error | null}> {
+  constructor(props: {children: ReactNode}) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error("React Error Boundary caught an error:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-8 text-center">
+          <div className="bg-red-500/10 border border-red-500/20 p-6 rounded-2xl max-w-lg w-full">
+            <h2 className="text-xl font-bold text-red-400 mb-4">Ops! Algo deu errado.</h2>
+            <p className="text-white/60 mb-4 text-sm font-mono break-words text-left bg-black/50 p-4 rounded-lg">
+              {this.state.error?.message || "Erro desconhecido"}
+            </p>
+            <p className="text-white/40 text-sm">
+              Por favor, tire um print desta tela e me envie para eu consertar!
+            </p>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 // Types
 interface Guest {
@@ -25,7 +60,15 @@ const BRINGING_OPTIONS = [
   { category: 'Outros', items: ['Carvão', 'Gelo', 'Sobremesa'] }
 ];
 
-export default function App() {
+export default function AppWrapper() {
+  return (
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
+  );
+}
+
+function App() {
   const [guests, setGuests] = useState<Guest[]>([]);
   const [name, setName] = useState('');
   const [attending, setAttending] = useState<boolean | null>(null);
