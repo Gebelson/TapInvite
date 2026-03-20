@@ -1,0 +1,40 @@
+{
+  "entities": {
+    "Guest": {
+      "title": "Guest",
+      "description": "A guest RSVP for the birthday party.",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The full name of the guest."
+        },
+        "attending": {
+          "type": "boolean",
+          "description": "Whether the guest is attending."
+        },
+        "bringing": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "What the guest is bringing."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the RSVP was created."
+        }
+      },
+      "required": ["name", "attending", "createdAt"]
+    }
+  },
+  "firestore": {
+    "guests_v2": {
+      "schema": {
+        "$ref": "#/entities/Guest"
+      },
+      "description": "Collection of guest RSVPs."
+    }
+  }
+}

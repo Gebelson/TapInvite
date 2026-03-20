@@ -1,0 +1,47 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    // Collection: guests_v2
+    // Document ID: auto-generated
+    // Fields:
+    //   - name: string (required, length 1-100)
+    //   - attending: boolean (required)
+    //   - bringing: list of strings (optional, max 20 items)
+    //   - createdAt: timestamp (required)
+    // ===============================================================
+
+    // Helper Functions
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+    function validStringLength(field, minLen, maxLen) {
+      return request.resource.data[field] is string &&
+        request.resource.data[field].size() >= minLen &&
+        request.resource.data[field].size() <= maxLen;
+    }
+    function isValidBringingList() {
+      return !('bringing' in request.resource.data) || (
+        request.resource.data.bringing is list &&
+        request.resource.data.bringing.size() <= 20
+      );
+    }
+
+    match /guests_v2/{guestId} {
+      // Anyone can read the guest list for this public event
+      allow read: if true;
+
+      // Anyone can create an RSVP, but it must be valid
+      allow create: if hasRequiredFields(['name', 'attending', 'createdAt']) &&
+        validStringLength('name', 1, 100) &&
+        request.resource.data.attending is bool &&
+        request.resource.data.createdAt is timestamp &&
+        isValidBringingList();
+
+      // No updates or deletes allowed for simplicity and security
+      allow update, delete: if false;
+    }
+  }
+}
